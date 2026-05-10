@@ -3,22 +3,24 @@
 //! Works around LLVM codegen issues with `-C target-cpu=native` on AVX512 CPUs.
 
 /// Check if all bytes are ASCII (< 128).
+#[cfg(feature = "alloc")]
 #[inline]
 pub fn is_ascii(bytes: &[u8]) -> bool {
-    #[cfg(target_arch = "x86_64")]
-    if is_x86_feature_detected!("avx512bw") {
+    #[cfg(all(feature = "std", target_arch = "x86_64"))]
+    if std::is_x86_feature_detected!("avx512bw") {
         return unsafe { is_ascii_avx512(bytes) };
     }
     bytes.is_ascii()
 }
 
 /// Check if all characters in the string are ASCII.
+#[cfg(feature = "alloc")]
 #[inline]
 pub fn is_ascii_str(s: &str) -> bool {
     is_ascii(s.as_bytes())
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(feature = "std", target_arch = "x86_64"))]
 #[target_feature(enable = "avx512bw")]
 /// # Safety
 /// Caller must ensure AVX512BW is available (via `is_x86_feature_detected!`).

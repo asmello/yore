@@ -9,34 +9,34 @@ use crate::{
 #[cfg(feature = "alloc")]
 use crate::{DecodeError, EncodeError};
 #[cfg(feature = "alloc")]
-use crate::decoder::complete::decode_helper;
+use crate::decoder::complete::decode_helper_non_ascii;
 #[derive(Copy, Clone)]
-pub struct CP862;
-impl CP862 {
-    /// Decode CP862 byte-encoding into UTF-8 string
+pub struct CP437G;
+impl CP437G {
+    /// Decode CP437G byte-encoding into UTF-8 string
     ///
     /// # Examples
     ///
     /// ```
-    /// use yore::code_pages::CP862;
+    /// use yore::code_pages::CP437G;
     ///
-    /// assert_eq!(CP862.decode(&[116, 101, 120, 116]), "text");
+    /// assert_eq!(CP437G.decode(&[116, 101, 120, 116]), "text");
     /// ```
     #[cfg(feature = "alloc")]
     #[inline(always)]
     pub fn decode(self, bytes: &[u8]) -> Cow<'_, str> {
-        decode_helper(&DECODE_TABLE, bytes)
+        decode_helper_non_ascii(&DECODE_TABLE, bytes)
     }
-    /// Decode a single CP862 byte into its corresponding character.
+    /// Decode a single CP437G byte into its corresponding character.
     ///
     /// Available without `alloc`.
     ///
     /// # Examples
     ///
     /// ```
-    /// use yore::code_pages::CP862;
+    /// use yore::code_pages::CP437G;
     ///
-    /// assert_eq!(CP862.decode_byte(b't'), 't');
+    /// assert_eq!(CP437G.decode_byte(b't'), 't');
     /// ```
     #[inline(always)]
     pub fn decode_byte(self, b: u8) -> char {
@@ -46,50 +46,50 @@ impl CP862 {
             .next()
             .unwrap()
     }
-    /// Encode UTF-8 string into CP862 byte-encoding
+    /// Encode UTF-8 string into CP437G byte-encoding
     ///
     /// Undefined characters will result in [`EncodeError`]
     ///
     /// # Examples
     ///
     /// ```
-    /// use yore::code_pages::CP862;
+    /// use yore::code_pages::CP437G;
     /// use yore::EncodeError;
     ///
-    /// assert_eq!(CP862.encode("text").unwrap(), vec![116, 101, 120, 116]);
-    /// assert!(matches!(CP862.encode("text 🦀"), EncodeError));
+    /// assert_eq!(CP437G.encode("text").unwrap(), vec![116, 101, 120, 116]);
+    /// assert!(matches!(CP437G.encode("text 🦀"), EncodeError));
     /// ```
     #[cfg(feature = "alloc")]
     #[inline(always)]
     pub fn encode(self, s: &str) -> Result<Cow<'_, [u8]>, EncodeError> {
         self.encode_helper(s, None)
     }
-    /// Encode UTF-8 string into CP862 byte-encoding
+    /// Encode UTF-8 string into CP437G byte-encoding
     ///
     /// Undefined characters will be replaced with byte `fallback`
     ///
     /// # Examples
     ///
     /// ```
-    /// use yore::code_pages::CP862;
+    /// use yore::code_pages::CP437G;
     ///
-    /// assert_eq!(CP862.encode_lossy("text 🦀", 168), vec![116, 101, 120, 116, 32, 168]);
+    /// assert_eq!(CP437G.encode_lossy("text 🦀", 168), vec![116, 101, 120, 116, 32, 168]);
     /// ```
     #[cfg(feature = "alloc")]
     #[inline(always)]
     pub fn encode_lossy(self, s: &str, fallback: u8) -> Cow<'_, [u8]> {
         self.encode_helper(s, Some(fallback)).unwrap()
     }
-    /// Encode a single Unicode `char` to its CP862 byte, or `None` if
+    /// Encode a single Unicode `char` to its CP437G byte, or `None` if
     /// the character has no mapping. Allocation-free.
     ///
     /// Compose with `s.chars()` for streaming use:
     ///
     /// ```
-    /// use yore::code_pages::CP862;
+    /// use yore::code_pages::CP437G;
     ///
     /// let s = "text";
-    /// let bytes: Vec<u8> = s.chars().map(|c| CP862.encode_char(c).unwrap()).collect();
+    /// let bytes: Vec<u8> = s.chars().map(|c| CP437G.encode_char(c).unwrap()).collect();
     /// assert_eq!(bytes, vec![116, 101, 120, 116]);
     /// ```
     #[inline]
@@ -100,7 +100,7 @@ impl CP862 {
         self.encode_grapheme(&mut slice)
     }
 }
-impl CodePage for CP862 {
+impl CodePage for CP437G {
     #[cfg(feature = "alloc")]
     #[inline(always)]
     fn decode<'a>(&self, bytes: &'a [u8]) -> Result<Cow<'a, str>, DecodeError> {
@@ -113,128 +113,128 @@ const DECODE_TABLE: decoder::complete::Table = [
         len: 1,
     },
     CompleteEntry {
-        buf: [0x01, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x98, 0xBA],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x02, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x98, 0xBB],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x03, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x99, 0xA5],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x04, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x99, 0xA6],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x05, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x99, 0xA3],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x06, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x99, 0xA0],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x07, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x80, 0xA2],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x08, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x97, 0x98],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x09, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x97, 0x8B],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x0A, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x97, 0x99],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x0B, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x99, 0x82],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x0C, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x99, 0x80],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x0D, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x99, 0xAA],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x0E, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x99, 0xAB],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x0F, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x98, 0xBC],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x10, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x96, 0xBA],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x11, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x97, 0x84],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x12, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x86, 0x95],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x13, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x80, 0xBC],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x14, 0x00, 0x00],
-        len: 1,
+        buf: [0xC2, 0xB6, 0x00],
+        len: 2,
     },
     CompleteEntry {
-        buf: [0x15, 0x00, 0x00],
-        len: 1,
+        buf: [0xC2, 0xA7, 0x00],
+        len: 2,
     },
     CompleteEntry {
-        buf: [0x16, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x96, 0xAC],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x17, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x86, 0xA8],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x18, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x86, 0x91],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x19, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x86, 0x93],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x1A, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x86, 0x92],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x1B, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x86, 0x90],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x1C, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x88, 0x9F],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x1D, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x86, 0x94],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x1E, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x96, 0xB2],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0x1F, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x96, 0xBC],
+        len: 3,
     },
     CompleteEntry {
         buf: [0x20, 0x00, 0x00],
@@ -617,115 +617,115 @@ const DECODE_TABLE: decoder::complete::Table = [
         len: 1,
     },
     CompleteEntry {
-        buf: [0x7F, 0x00, 0x00],
-        len: 1,
+        buf: [0xE2, 0x8C, 0x82],
+        len: 3,
     },
     CompleteEntry {
-        buf: [0xD7, 0x90, 0x00],
+        buf: [0xC3, 0x87, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0x91, 0x00],
+        buf: [0xC3, 0xBC, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0x92, 0x00],
+        buf: [0xC3, 0xA9, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0x93, 0x00],
+        buf: [0xC3, 0xA2, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0x94, 0x00],
+        buf: [0xC3, 0xA4, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0x95, 0x00],
+        buf: [0xC3, 0xA0, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0x96, 0x00],
+        buf: [0xC3, 0xA5, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0x97, 0x00],
+        buf: [0xC3, 0xA7, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0x98, 0x00],
+        buf: [0xC3, 0xAA, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0x99, 0x00],
+        buf: [0xC3, 0xAB, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0x9A, 0x00],
+        buf: [0xC3, 0xA8, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0x9B, 0x00],
+        buf: [0xC3, 0xAF, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0x9C, 0x00],
+        buf: [0xC3, 0xAE, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0x9D, 0x00],
+        buf: [0xC3, 0xAC, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0x9E, 0x00],
+        buf: [0xC3, 0x84, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0x9F, 0x00],
+        buf: [0xC3, 0x85, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0xA0, 0x00],
+        buf: [0xC3, 0x89, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0xA1, 0x00],
+        buf: [0xC3, 0xA6, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0xA2, 0x00],
+        buf: [0xC3, 0x86, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0xA3, 0x00],
+        buf: [0xC3, 0xB4, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0xA4, 0x00],
+        buf: [0xC3, 0xB6, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0xA5, 0x00],
+        buf: [0xC3, 0xB2, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0xA6, 0x00],
+        buf: [0xC3, 0xBB, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0xA7, 0x00],
+        buf: [0xC3, 0xB9, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0xA8, 0x00],
+        buf: [0xC3, 0xBF, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0xA9, 0x00],
+        buf: [0xC3, 0x96, 0x00],
         len: 2,
     },
     CompleteEntry {
-        buf: [0xD7, 0xAA, 0x00],
+        buf: [0xC3, 0x9C, 0x00],
         len: 2,
     },
     CompleteEntry {
@@ -1133,7 +1133,7 @@ const DECODE_TABLE: decoder::complete::Table = [
         len: 2,
     },
 ];
-impl Encoder for CP862 {
+impl Encoder for CP437G {
     #[doc(hidden)]
     #[inline]
     fn encode_grapheme(&self, bytes: &mut &[u8]) -> Option<u8> {
@@ -1147,6 +1147,8 @@ impl Encoder for CP862 {
                 (0xC2, [_, b, ..]) => {
                     *bytes = &bytes[2..];
                     match b {
+                        0xB6 => 0x14,
+                        0xA7 => 0x15,
                         0xA2 => 0x9B,
                         0xA3 => 0x9C,
                         0xA5 => 0x9D,
@@ -1171,6 +1173,33 @@ impl Encoder for CP862 {
                 (0xC3, [_, b, ..]) => {
                     *bytes = &bytes[2..];
                     match b {
+                        0x87 => 0x80,
+                        0xBC => 0x81,
+                        0xA9 => 0x82,
+                        0xA2 => 0x83,
+                        0xA4 => 0x84,
+                        0xA0 => 0x85,
+                        0xA5 => 0x86,
+                        0xA7 => 0x87,
+                        0xAA => 0x88,
+                        0xAB => 0x89,
+                        0xA8 => 0x8A,
+                        0xAF => 0x8B,
+                        0xAE => 0x8C,
+                        0xAC => 0x8D,
+                        0x84 => 0x8E,
+                        0x85 => 0x8F,
+                        0x89 => 0x90,
+                        0xA6 => 0x91,
+                        0x86 => 0x92,
+                        0xB4 => 0x93,
+                        0xB6 => 0x94,
+                        0xB2 => 0x95,
+                        0xBB => 0x96,
+                        0xB9 => 0x97,
+                        0xBF => 0x98,
+                        0x96 => 0x99,
+                        0x9C => 0x9A,
                         0xA1 => 0xA0,
                         0xAD => 0xA1,
                         0xB3 => 0xA2,
@@ -1213,42 +1242,16 @@ impl Encoder for CP862 {
                         _ => return None,
                     }
                 }
-                (0xD7, [_, b, ..]) => {
-                    *bytes = &bytes[2..];
-                    match b {
-                        0x90 => 0x80,
-                        0x91 => 0x81,
-                        0x92 => 0x82,
-                        0x93 => 0x83,
-                        0x94 => 0x84,
-                        0x95 => 0x85,
-                        0x96 => 0x86,
-                        0x97 => 0x87,
-                        0x98 => 0x88,
-                        0x99 => 0x89,
-                        0x9A => 0x8A,
-                        0x9B => 0x8B,
-                        0x9C => 0x8C,
-                        0x9D => 0x8D,
-                        0x9E => 0x8E,
-                        0x9F => 0x8F,
-                        0xA0 => 0x90,
-                        0xA1 => 0x91,
-                        0xA2 => 0x92,
-                        0xA3 => 0x93,
-                        0xA4 => 0x94,
-                        0xA5 => 0x95,
-                        0xA6 => 0x96,
-                        0xA7 => 0x97,
-                        0xA8 => 0x98,
-                        0xA9 => 0x99,
-                        0xAA => 0x9A,
-                        _ => return None,
-                    }
-                }
                 (0xE2, [_, b, c, ..]) => {
                     *bytes = &bytes[3..];
                     match b {
+                        0x80 => {
+                            match c {
+                                0xA2 => 0x7,
+                                0xBC => 0x13,
+                                _ => return None,
+                            }
+                        }
                         0x81 => {
                             match c {
                                 0xBF => 0xFC,
@@ -1261,8 +1264,21 @@ impl Encoder for CP862 {
                                 _ => return None,
                             }
                         }
+                        0x86 => {
+                            match c {
+                                0x95 => 0x12,
+                                0xA8 => 0x17,
+                                0x91 => 0x18,
+                                0x93 => 0x19,
+                                0x92 => 0x1A,
+                                0x90 => 0x1B,
+                                0x94 => 0x1D,
+                                _ => return None,
+                            }
+                        }
                         0x88 => {
                             match c {
+                                0x9F => 0x1C,
                                 0x9E => 0xEC,
                                 0xA9 => 0xEF,
                                 0x99 => 0xF9,
@@ -1281,6 +1297,7 @@ impl Encoder for CP862 {
                         }
                         0x8C => {
                             match c {
+                                0x82 => 0x7F,
                                 0x90 => 0xA9,
                                 0xA0 => 0xF4,
                                 0xA1 => 0xF5,
@@ -1339,6 +1356,10 @@ impl Encoder for CP862 {
                         }
                         0x96 => {
                             match c {
+                                0xBA => 0x10,
+                                0xAC => 0x16,
+                                0xB2 => 0x1E,
+                                0xBC => 0x1F,
                                 0x91 => 0xB0,
                                 0x92 => 0xB1,
                                 0x93 => 0xB2,
@@ -1348,6 +1369,36 @@ impl Encoder for CP862 {
                                 0x90 => 0xDE,
                                 0x80 => 0xDF,
                                 0xA0 => 0xFE,
+                                _ => return None,
+                            }
+                        }
+                        0x97 => {
+                            match c {
+                                0x98 => 0x8,
+                                0x8B => 0x9,
+                                0x99 => 0xA,
+                                0x84 => 0x11,
+                                _ => return None,
+                            }
+                        }
+                        0x98 => {
+                            match c {
+                                0xBA => 0x1,
+                                0xBB => 0x2,
+                                0xBC => 0xF,
+                                _ => return None,
+                            }
+                        }
+                        0x99 => {
+                            match c {
+                                0xA5 => 0x3,
+                                0xA6 => 0x4,
+                                0xA3 => 0x5,
+                                0xA0 => 0x6,
+                                0x82 => 0xB,
+                                0x80 => 0xC,
+                                0xAA => 0xD,
+                                0xAB => 0xE,
                                 _ => return None,
                             }
                         }

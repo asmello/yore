@@ -11,8 +11,12 @@ repository = "https://github.com/bonega/yore/"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = ["std"]
+std = ["alloc"]
+alloc = []
+
 [dependencies]
-thiserror = "1.0.25"
 
 [lib]
 bench = false

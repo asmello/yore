@@ -1,17 +1,30 @@
-use std::borrow::Cow;
+#![cfg_attr(not(feature = "std"), no_std)]
 
-use thiserror::Error;
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
+#[cfg(feature = "alloc")]
+use alloc::borrow::Cow;
 
 pub mod code_pages;
 pub(crate) mod decoder;
 mod encoder;
 mod simd;
 pub(crate) use encoder::Encoder;
+#[cfg(feature = "alloc")]
 pub(crate) use simd::{is_ascii, is_ascii_str};
 
-#[derive(Error, Debug)]
-#[error("Character in UTF-8 string has no mapping defined in code page")]
+#[derive(Debug)]
 pub struct EncodeError {}
+
+impl core::fmt::Display for EncodeError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str("Character in UTF-8 string has no mapping defined in code page")
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for EncodeError {}
 
 pub trait CodePage: Encoder {
     /// Encode UTF-8 string into single-byte encoding
@@ -28,6 +41,7 @@ pub trait CodePage: Encoder {
     /// assert_eq!(cp850.encode("text").unwrap(), vec![116, 101, 120, 116]);
     /// assert!(matches!(cp850.encode("text 🦀"), EncodeError));
     /// ```
+    #[cfg(feature = "alloc")]
     #[inline]
     fn encode<'a>(&self, s: &'a str) -> Result<Cow<'a, [u8]>, EncodeError> {
         self.encode_helper(s, None)
@@ -46,6 +60,7 @@ pub trait CodePage: Encoder {
     /// let cp850: &dyn CodePage = &yore::code_pages::CP850;
     /// assert_eq!(cp850.encode_lossy("text 🦀", 168), vec![116, 101, 120, 116, 32, 168])
     /// ```
+    #[cfg(feature = "alloc")]
     #[inline]
     fn encode_lossy<'a>(&self, s: &'a str, fallback: u8) -> Cow<'a, [u8]> {
         self.encode_helper(s, Some(fallback)).unwrap()
@@ -68,6 +83,7 @@ pub trait CodePage: Encoder {
     /// //codepoint 231 is undefined
     /// assert!(matches!(cp857.decode(&[116, 101, 120, 116, 231]), Err(DecodeError{position: 4, value: 231})));
     /// ```
+    #[cfg(feature = "alloc")]
     fn decode<'a>(&self, bytes: &'a [u8]) -> Result<Cow<'a, str>, DecodeError>;
 
     /// Decode single-byte encoding into UTF-8 string
@@ -84,6 +100,7 @@ pub trait CodePage: Encoder {
     /// //codepoint 231 is undefined
     /// assert_eq!(cp857.decode_lossy(&[116, 101, 120, 116, 32, 231]), "text �");
     /// ```
+    #[cfg(feature = "alloc")]
     #[inline(always)]
     fn decode_lossy<'a>(&self, bytes: &'a [u8]) -> Cow<'a, str> {
         self.decode(bytes).unwrap()
@@ -103,20 +120,101 @@ pub trait CodePage: Encoder {
     /// //codepoint 231 is undefined
     /// assert_eq!(cp857.decode_lossy_fallback(&[116, 101, 120, 116, 32, 231], '�'), "text �");
     /// ```
+    #[cfg(feature = "alloc")]
     #[inline(always)]
     fn decode_lossy_fallback<'a>(&self, bytes: &'a [u8], _fallback: char) -> Cow<'a, str> {
         self.decode(bytes).unwrap()
     }
 }
 
-#[derive(Error, Debug)]
-#[error("Undefined codepoint {value} at offset {position}")]
+#[derive(Debug)]
 pub struct DecodeError {
     pub position: usize,
     pub value: u8,
 }
 
+impl core::fmt::Display for DecodeError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(
+            f,
+            "Undefined codepoint {} at offset {}",
+            self.value, self.position
+        )
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for DecodeError {}
+
 #[cfg(test)]
+mod no_alloc_tests {
+    use crate::code_pages::{CP437, CP437G, CP864};
+
+    #[test]
+    fn encode_char_ascii() {
+        assert_eq!(CP437.encode_char('t'), Some(b't'));
+        assert_eq!(CP437.encode_char('\n'), Some(b'\n'));
+    }
+
+    #[test]
+    fn encode_char_high_glyph() {
+        assert_eq!(CP437.encode_char('█'), Some(0xDB));
+        assert_eq!(CP437.encode_char('╔'), Some(0xC9));
+        assert_eq!(CP437G.encode_char('☺'), Some(0x01));
+    }
+
+    #[test]
+    fn encode_char_unmapped() {
+        assert_eq!(CP437.encode_char('🦀'), None);
+        assert_eq!(CP437.encode_char('☺'), None); // strict CP437 has no smiley
+    }
+
+    #[test]
+    fn decode_byte_complete() {
+        assert_eq!(CP437.decode_byte(b't'), 't');
+        assert_eq!(CP437.decode_byte(0xDB), '█');
+        assert_eq!(CP437.decode_byte(0xC9), '╔');
+    }
+
+    #[test]
+    fn cp437g_ibm_graphics() {
+        // IBM-Graphics glyphs encode to their low bytes via encode_char
+        assert_eq!(CP437G.encode_char('☺'), Some(0x01));
+        assert_eq!(CP437G.encode_char('♥'), Some(0x03));
+        assert_eq!(CP437G.encode_char('☼'), Some(0x0F));
+        assert_eq!(CP437G.encode_char('⌂'), Some(0x7F));
+
+        // Glyphs that share a byte with ASCII controls are now representable
+        assert_eq!(CP437G.encode_char('○'), Some(0x09));
+        assert_eq!(CP437G.encode_char('◙'), Some(0x0A));
+        assert_eq!(CP437G.encode_char('♪'), Some(0x0D));
+
+        // Decoding round-trip — table maps the bytes to the IBMGRAPH glyphs
+        assert_eq!(CP437G.decode_byte(0x01), '☺');
+        assert_eq!(CP437G.decode_byte(0x09), '○');
+        assert_eq!(CP437G.decode_byte(0x0A), '◙');
+        assert_eq!(CP437G.decode_byte(0x0D), '♪');
+        assert_eq!(CP437G.decode_byte(0x7F), '⌂');
+
+        // ASCII fast-path still encodes the C0 chars to the same bytes
+        // (yore convention; callers intercept the source char if they care)
+        assert_eq!(CP437G.encode_char('\n'), Some(0x0A));
+        assert_eq!(CP437G.encode_char('\t'), Some(0x09));
+        assert_eq!(CP437G.encode_char('\r'), Some(0x0D));
+
+        // Standard CP437 codepage still maps low bytes to C0 controls
+        assert_eq!(CP437.decode_byte(0x01), '\u{0001}');
+    }
+
+    #[test]
+    fn decode_byte_incomplete() {
+        // CP864 has a nonstandard ASCII mapping: 0x25 -> '٪'
+        assert_eq!(CP864.decode_byte(0x25), Some('٪'));
+        assert_eq!(CP864.decode_byte(b't'), Some('t'));
+    }
+}
+
+#[cfg(all(test, feature = "alloc"))]
 mod tests {
     use crate::code_pages::{CP857, CP864, CP869, CP874, CP1253, CP1255, CP1257};
     use crate::CodePage;
@@ -147,7 +245,7 @@ mod tests {
         for cp in codepages {
             for b in 0u8..128 {
                 let bytes = [b];
-                let expected = std::str::from_utf8(&bytes).unwrap();
+                let expected = core::str::from_utf8(&bytes).unwrap();
                 match cp.decode(&bytes) {
                     Ok(decoded) => assert_eq!(
                         &*decoded, expected,

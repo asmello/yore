@@ -1,6 +1,11 @@
-use std::borrow::Cow;
-use std::mem;
+#[cfg(feature = "alloc")]
+use alloc::borrow::Cow;
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
+#[cfg(feature = "alloc")]
+use core::mem;
 
+#[cfg(feature = "alloc")]
 use super::{contains_nonascii, finalize_string, USIZE_SIZE};
 
 /// Entry for complete/lossy tables - optimized for branchless 4-byte writes
@@ -19,6 +24,7 @@ impl Entry {
     ///
     /// dst must have at least four bytes of space remaining.
     /// After execution dst will be advanced by the number of bytes written.
+    #[cfg(feature = "alloc")]
     #[inline]
     pub unsafe fn write(self, dst: &mut *mut u8) {
         let word: u32 = mem::transmute(self);
@@ -29,10 +35,11 @@ impl Entry {
 
 pub(crate) type Table = [Entry; 256];
 
+#[cfg(feature = "alloc")]
 #[inline(always)]
 pub(crate) fn decode_helper<'a>(table: &Table, src: &'a [u8]) -> Cow<'a, str> {
     if crate::is_ascii(src) {
-        let s = unsafe { std::str::from_utf8_unchecked(src) };
+        let s = unsafe { core::str::from_utf8_unchecked(src) };
         return s.into();
     }
 
@@ -74,6 +81,7 @@ pub(crate) fn decode_helper<'a>(table: &Table, src: &'a [u8]) -> Cow<'a, str> {
 
 /// Same as `decode_helper`, but have no optimizations for ascii.
 /// Needed by CP864 and EBCDIC codepages.
+#[cfg(feature = "alloc")]
 #[inline(always)]
 pub(crate) fn decode_helper_non_ascii<'a>(table: &Table, bytes: &'a [u8]) -> Cow<'a, str> {
     // +1 for branchless 4-byte write which may overshoot by 1 byte
@@ -88,6 +96,7 @@ pub(crate) fn decode_helper_non_ascii<'a>(table: &Table, bytes: &'a [u8]) -> Cow
 /// # Safety
 ///
 /// This function is unsafe because it assumes that the buffer pointed to by [`dst`] has a length >= src.len() * 3
+#[cfg(feature = "alloc")]
 #[inline]
 unsafe fn decode_slice(table: &Table, src: &[u8], dst: &mut *mut u8) {
     for b in src {

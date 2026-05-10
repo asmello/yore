@@ -1,9 +1,25 @@
-use std::borrow::Cow;
+#[cfg(feature = "alloc")]
+use alloc::borrow::Cow;
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
 
+#[cfg(feature = "alloc")]
 use crate::EncodeError;
 
 pub trait Encoder {
     fn encode_grapheme(&self, bytes: &mut &[u8]) -> Option<u8>;
+
+    /// Encode a single Unicode `char` to its codepage byte, or `None` if
+    /// the character has no mapping. Allocation-free.
+    #[inline]
+    fn encode_char(&self, c: char) -> Option<u8> {
+        let mut buf = [0u8; 4];
+        let utf8 = c.encode_utf8(&mut buf).as_bytes();
+        let mut slice: &[u8] = utf8;
+        self.encode_grapheme(&mut slice)
+    }
+
+    #[cfg(feature = "alloc")]
     #[doc(hidden)]
     #[inline(always)]
     fn encode_helper<'a>(
